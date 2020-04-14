@@ -1,12 +1,14 @@
 <?php
 if (!defined('__TYPECHO_ROOT_DIR__')) exit;
 /**
- * 提供多个可选择的Gravatar头像服务器，同时提供默认头像设置。
+ * 提供多个可选择的Gravatar头像服务器，同时提供默认头像设置。提供根据邮箱获取QQ头像功能
  * 
  * @package Gravatar Server
  * @author LT21
- * @version 1.1.0
+ * @author oPluss
+ * @version 1.2.0
  * @link http://lt21.me
+ * @link http://www.opluss.top
  */
 class GravatarServer_Plugin implements Typecho_Plugin_Interface
 {
@@ -41,6 +43,7 @@ class GravatarServer_Plugin implements Typecho_Plugin_Interface
      */
     public static function config(Typecho_Widget_Helper_Form $form)
     {
+    	
         /** 服务器 **/
         $server = new Typecho_Widget_Helper_Form_Element_Radio( 'server',  array(
                 'http://cn.gravatar.com'        =>  'Gravatar CN （ http://cn.gravatar.com ）',
@@ -49,20 +52,27 @@ class GravatarServer_Plugin implements Typecho_Plugin_Interface
                 'http://2.gravatar.com'         =>  'Gravatar 2 （ http://2.gravatar.com ）',
                 'http://3.gravatar.com'         =>  'Gravatar 3 （ http://3.gravatar.com ）',
                 'https://secure.gravatar.com'   =>  'Gravatar Secure （ https://secure.gravatar.com ）',
-                'http://gravatar.duoshuo.com'   =>  '多说 Gravatar 镜像 （ http://gravatar.duoshuo.com ）'),
+                'https://cdn.v2ex.com/gravatar'   =>  '国内镜像 （ https://cdn.v2ex.com/gravatar ）'),
             'http://cn.gravatar.com', _t('选择服务器'), _t('替换Typecho使用的Gravatar头像服务器（ www.gravatar.com ）') );
         $form->addInput($server->multiMode());
 
         /** 默认头像 **/
         $default = new Typecho_Widget_Helper_Form_Element_Radio( 'default',  array(
-                'mm'            =>  '<img src=http://cn.gravatar.com/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d=mm height="32" width="32" /> 神秘人物',
-                'blank'         =>  '<img src=http://cn.gravatar.com/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d=blank height="32" width="32" /> 空白',
-                ''				=>  '<img src=http://cn.gravatar.com/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d= height="32" width="32" /> Gravatar 标志',
-                'identicon'     =>  '<img src=http://cn.gravatar.com/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d=identicon height="32" width="32" /> 抽象图形（自动生成）',
-                'wavatar'       =>  '<img src=http://cn.gravatar.com/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d=wavatar height="32" width="32" /> Wavatar（自动生成）',
-                'monsterid'     =>  '<img src=http://cn.gravatar.com/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d=monsterid height="32" width="32" /> 小怪物（自动生成）'),
+                'mm'            =>  '<img src=https://cdn.v2ex.com/gravatar/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d=mm height="32" width="32" /> 神秘人物',
+                'blank'         =>  '<img src=https://cdn.v2ex.com/gravatar/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d=blank height="32" width="32" /> 空白',
+                ''				=>  '<img src=https://cdn.v2ex.com/gravatar/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d= height="32" width="32" /> Gravatar 标志',
+                'identicon'     =>  '<img src=https://cdn.v2ex.com/gravatar/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d=identicon height="32" width="32" /> 抽象图形（自动生成）',
+                'wavatar'       =>  '<img src=https://cdn.v2ex.com/gravatar/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d=wavatar height="32" width="32" /> Wavatar（自动生成）',
+                'monsterid'     =>  '<img src=https://cdn.v2ex.com/gravatar/avatar/926f6ea036f9236ae1ceec566c2760ea?s=32&r=G&forcedefault=1&d=monsterid height="32" width="32" /> 小怪物（自动生成）'),
             'mm', _t('选择默认头像'), _t('当评论者没有设置Gravatar头像时默认显示该头像') );
         $form->addInput($default->multiMode());
+        //其他配置
+    	$othercfg = new Typecho_Widget_Helper_Form_Element_Checkbox( 'othercfg', 
+	    	array('ifcheckqq' => '是否检测QQ头像',
+	    		  'ignore_isSecure' => '是否强制使用所选源'),
+	    	array('ifcheckqq'),
+	    		'其他配置' );
+	    $form->addInput($othercfg->multiMode());
     }
     
     /**
@@ -83,7 +93,8 @@ class GravatarServer_Plugin implements Typecho_Plugin_Interface
     public static function render($size, $rating, $default, $comments)
     {
         $default = Typecho_Widget::widget('Widget_Options')->plugin('GravatarServer')->default;
-        $url = self::gravatarUrl($comments->mail, $size, $rating, $default, $comments->request->isSecure());
+        $othercfg = Typecho_Widget::widget('Widget_Options')->plugin('GravatarServer')->othercfg;
+        $url = self::gravatarUrl($comments->mail, $size, $rating, $default, $othercfg, $comments->request->isSecure());
         echo '<img class="avatar" src="' . $url . '" alt="' . $comments->author . '" width="' . $size . '" height="' . $size . '" />';
     }
 
@@ -94,12 +105,31 @@ class GravatarServer_Plugin implements Typecho_Plugin_Interface
      * @param int $size 
      * @param string $rating 
      * @param string $default 
+     * @param string $othercfg
      * @param bool $isSecure 
      * @return string
      */
-    public static function gravatarUrl($mail, $size, $rating, $default, $isSecure = false)
+    public static function gravatarUrl($mail, $size, $rating, $default, $othercfg, $isSecure = false)
     {
-        $url = $isSecure ? 'https://secure.gravatar.com' : Typecho_Widget::widget('Widget_Options')->plugin('GravatarServer')->server;
+    	// 检测是否是数字类型的QQ邮箱
+    	if (!empty($othercfg) && in_array('ifcheckqq', $othercfg))
+    	{
+	    	$regex="/^[0-9]+@[Qq][Qq]\.com$/";
+	    	$result = preg_match($regex,$mail);
+	    	if ($result)
+	    	{
+	    		$qq = substr($mail, 0, -7);
+	    		$geturl = 'http://ptlogin2.qq.com/getface?&imgtype=1&uin='.$qq;
+				$qquser = file_get_contents($geturl);
+				$str1 = explode('&k=', $qquser);
+				$str2 = explode('&s=', $str1[1]);
+				$k = $str2[0];
+				$qqimg = 'https://q1.qlogo.cn/g?b=qq&k='.$k.'&s=100';
+	    		return $qqimg;
+	    	}
+    	}
+    	
+        $url = $isSecure && (empty($othercfg) || !in_array('ignore_isSecure', $othercfg)) ? 'https://secure.gravatar.com' : Typecho_Widget::widget('Widget_Options')->plugin('GravatarServer')->server;
         $url .= '/avatar/';
 
         if (!empty($mail)) {
