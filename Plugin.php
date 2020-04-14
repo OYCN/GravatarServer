@@ -69,7 +69,8 @@ class GravatarServer_Plugin implements Typecho_Plugin_Interface
         //其他配置
     	$othercfg = new Typecho_Widget_Helper_Form_Element_Checkbox( 'othercfg', 
 	    	array('ifcheckqq' => '是否检测QQ头像',
-	    		  'ignore_isSecure' => '是否强制使用所选源'),
+	    		  'ignore_isSecure' => '是否强制使用所选源',
+	    		  'debug' => 'DEBUG模式'),
 	    	array('ifcheckqq'),
 	    		'其他配置' );
 	    $form->addInput($othercfg->multiMode());
@@ -95,6 +96,8 @@ class GravatarServer_Plugin implements Typecho_Plugin_Interface
         $default = Typecho_Widget::widget('Widget_Options')->plugin('GravatarServer')->default;
         $othercfg = Typecho_Widget::widget('Widget_Options')->plugin('GravatarServer')->othercfg;
         $url = self::gravatarUrl($comments->mail, $size, $rating, $default, $othercfg, $comments->request->isSecure());
+        if(!empty($othercfg) && in_array('debug', $othercfg))
+        echo '<!--' . in_array('ifcheckqq', $othercfg) . '-->';
         echo '<img class="avatar" src="' . $url . '" alt="' . $comments->author . '" width="' . $size . '" height="' . $size . '" />';
     }
 
@@ -114,9 +117,7 @@ class GravatarServer_Plugin implements Typecho_Plugin_Interface
     	// 检测是否是数字类型的QQ邮箱
     	if (!empty($othercfg) && in_array('ifcheckqq', $othercfg))
     	{
-	    	$regex="/^[0-9]+@[Qq][Qq]\.com$/";
-	    	$result = preg_match($regex,$mail);
-	    	if ($result)
+	    	if (preg_match('/^\d{4,11}@qq\.com$/i', $mail))
 	    	{
 	    		$qq = substr($mail, 0, -7);
 	    		$geturl = 'http://ptlogin2.qq.com/getface?&imgtype=1&uin='.$qq;
