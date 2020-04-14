@@ -6,7 +6,7 @@ if (!defined('__TYPECHO_ROOT_DIR__')) exit;
  * @package Gravatar Server
  * @author LT21
  * @author oPluss
- * @version 1.2.0
+ * @version 1.1.0
  * @link http://lt21.me
  * @link http://www.opluss.top
  */
