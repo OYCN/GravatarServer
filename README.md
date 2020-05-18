@@ -15,4 +15,4 @@
  ## 声明
   - 原作者github地址为：https://github.com/LT21/GravatarServer
   - 未修改插件版本与原作者
-  - 文章链接：http://www.opluss.top/index.php/archives/55/
+  - 文章链接：http://www.opluss.top/index.php/default/55.html
